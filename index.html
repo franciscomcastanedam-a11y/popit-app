@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pop y Suma</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #fdf6e3;
+      padding: 10px;
+      margin: 0;
+    }
+    .suma {
+      font-size: 2rem;
+      margin: 10px 0;
+    }
+    .popit-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .popit-grupo {
+      display: inline-block;
+      padding: 10px;
+      border-radius: 10px;
+      background: #e0f7fa;
+    }
+    .grupo-lleno {
+      border: 3px solid red;
+      background: #ffcdd2;
+    }
+    .grupo-restante {
+      background: #bbdefb;
+    }
+    .fila {
+      display: flex;
+      justify-content: center;
+      margin: 5px 0;
+      flex-wrap: wrap;
+    }
+    .boton-pop {
+      width: 40px;
+      height: 40px;
+      background: #b3e5fc;
+      border: none;
+      border-radius: 50%;
+      margin: 5px;
+      font-size: 1rem;
+      cursor: not-allowed;
+      box-shadow: inset 0 0 0 rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+    .boton-pop.activo.sum1 {
+      background: #81c784;
+    }
+    .boton-pop.activo.sum2 {
+      background: #ffb74d;
+    }
+    .boton-pop.enabled {
+      cursor: pointer;
+    }
+    #respuesta {
+      font-size: 1.2rem;
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 200px;
+      box-sizing: border-box;
+    }
+    .mensaje {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #puntaje {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+    #reiniciar {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .boton-pop {
+        width: 32px;
+        height: 32px;
+        margin: 4px;
+      }
+      .suma {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎈 Pop y Suma</h1>
+  <div class="suma" id="suma">3 + 2 = ?</div>
+  <div class="popit-container" id="popit-container"></div>
+  <input type="number" id="respuesta" placeholder="¿Cuánto es?" disabled />
+  <button onclick="verificarRespuesta()">Verificar</button>
+  <div class="mensaje" id="mensaje"></div>
+  <div id="puntaje"></div>
+  <button id="reiniciar" onclick="reiniciarJuego()">Jugar de nuevo</button>
+
+  <script>
+    let num1, num2, totalEsperado;
+    let popsHechos = 0;
+    let estadoLlenado = [];
+    let ejercicioActual = 0;
+    let puntaje = 0;
+
+    function iniciarJuego() {
+      ejercicioActual = 0;
+      puntaje = 0;
+      document.getElementById("puntaje").textContent = "";
+      document.getElementById("reiniciar").style.display = "none";
+      nuevaSuma();
+    }
+
+    function nuevaSuma() {
+      if (ejercicioActual >= 10) {
+        document.getElementById("puntaje").textContent = `Puntaje final: ${puntaje}/10`;
+        document.getElementById("reiniciar").style.display = "inline-block";
+        return;
+      }
+      num1 = Math.floor(Math.random() * 9) + 1;
+      num2 = Math.floor(Math.random() * 9) + 1;
+      totalEsperado = num1 + num2;
+      document.getElementById("suma").innerText = `${num1} + ${num2} = ?`;
+      document.getElementById("mensaje").innerText = "";
+      document.getElementById("respuesta").value = "";
+      document.getElementById("respuesta").disabled = true;
+      popsHechos = 0;
+      estadoLlenado = [0, 0, 0, 0];
+      crearPopits();
+    }
+
+    function crearPopits() {
+      const container = document.getElementById("popit-container");
+      container.innerHTML = "";
+      for (let fila = 0; fila < 4; fila++) {
+        const filaDiv = document.createElement("div");
+        filaDiv.className = "fila";
+        for (let i = 0; i < 5; i++) {
+          const index = fila * 5 + i;
+          const btn = document.createElement("button");
+          btn.classList.add("boton-pop");
+          btn.id = `pop-${index}`;
+          if (fila === 0 && i === 0) btn.classList.add("enabled");
+          btn.onclick = () => manejarClick(btn, index);
+          filaDiv.appendChild(btn);
+        }
+        container.appendChild(filaDiv);
+      }
+    }
+
+    function manejarClick(btn, index) {
+      if (!btn.classList.contains("enabled") || btn.classList.contains("activo")) return;
+      btn.classList.add("activo");
+      const colorClase = popsHechos < num1 ? "sum1" : "sum2";
+      btn.classList.add(colorClase);
+      popsHechos++;
+
+      const fila = Math.floor(index / 5);
+      estadoLlenado[fila]++;
+
+      if (estadoLlenado[fila] < 5) {
+        const siguiente = fila * 5 + estadoLlenado[fila];
+        document.getElementById(`pop-${siguiente}`).classList.add("enabled");
+      } else if (fila + 1 < 4) {
+        const siguienteFila = (fila + 1) * 5;
+        document.getElementById(`pop-${siguienteFila}`).classList.add("enabled");
+      }
+
+      if (popsHechos === totalEsperado) {
+        document.getElementById("respuesta").disabled = false;
+      }
+    }
+
+    function verificarRespuesta() {
+      const respuesta = parseInt(document.getElementById("respuesta").value);
+      const mensaje = document.getElementById("mensaje");
+      if (respuesta === totalEsperado) {
+        mensaje.textContent = "✅ ¡Muy bien!";
+        mensaje.style.color = "green";
+        puntaje++;
+      } else {
+        mensaje.textContent = "❌ Intenta otra vez.";
+        mensaje.style.color = "red";
+      }
+      ejercicioActual++;
+      setTimeout(nuevaSuma, 1500);
+    }
+
+    function reiniciarJuego() {
+      iniciarJuego();
+    }
+
+    iniciarJuego();
+  </script>
+</body>
+</html>
